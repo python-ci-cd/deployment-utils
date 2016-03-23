@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.014;
+use JSON qw(encode_json);
+use File::Path qw(mkpath);
+use autodie;
+
+unless ( @ARGV == 3) {
+    die "Usage: $0 <environment> <distribution> <.deb file>\n";
+}
+my ( $env, $distribution, $package ) = @ARGV;
+
+my $base_path   = "$ENV{HOME}/aptly";
+my $repo_path   = "$base_path/$env/$distribution";
+my $config_file = "$base_path/$env-$distribution.conf";
+
+init_config();
+init_repo();
+add_package();
+
+
+sub init_config {
+    mkpath $base_path;
+    open my $CONF, '>:encoding(UTF-8)', $config_file;
+    say $CONF encode_json( {
+        rootDir => $repo_path,
+        architectures => [qw( i386 amd64 all )],
+    });
+    close $CONF;
+}
+
+sub init_repo {
+    mkpath $repo_path;
+    unless ( -d "$repo_path/db" ) {
+        system "aptly", "-config=$config_file",  "repo", "create", "-distribution=$distribution", "myrepo";
+        system "aptly", "-config=$config_file",  "publish", "repo", "myrepo";
+        
+    }
+}
+
+sub add_package {
+    system "aptly", "-config=$config_file",  "repo", "add", "myrepo", $package;
+    system "aptly", "-config=$config_file",  "publish", "update", $distribution;
+}
