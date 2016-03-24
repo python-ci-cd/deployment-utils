@@ -14,6 +14,7 @@ my ( $env, $distribution, $package ) = @ARGV;
 my $base_path   = "$ENV{HOME}/aptly";
 my $repo_path   = "$base_path/$env/$distribution";
 my $config_file = "$base_path/$env-$distribution.conf";
+my @aptly_cmd   = ("aptly", "-config=$config_file");
 
 init_config();
 init_repo();
@@ -31,15 +32,13 @@ sub init_config {
 }
 
 sub init_repo {
+    return if -d "$repo_path/db";
     mkpath $repo_path;
-    unless ( -d "$repo_path/db" ) {
-        system "aptly", "-config=$config_file",  "repo", "create", "-distribution=$distribution", "myrepo";
-        system "aptly", "-config=$config_file",  "publish", "repo", "myrepo";
-        
-    }
+    system @aptly_cmd, "repo", "create", "-distribution=$distribution", "myrepo";
+    system @aptly_cmd, "publish", "repo", "myrepo";
 }
 
 sub add_package {
-    system "aptly", "-config=$config_file",  "repo", "add", "myrepo", $package;
-    system "aptly", "-config=$config_file",  "publish", "update", $distribution;
+    system @aptly_cmd,  "repo", "add", "myrepo", $package;
+    system @aptly_cmd,  "publish", "update", $distribution;
 }
