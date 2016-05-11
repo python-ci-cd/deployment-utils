@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="81">
+  <server artifactsdir="artifacts" commandRepositoryLocation="default" serverId="297774ff-eb0f-4daa-96ae-716e4fef2d9d" />
+  <pipelines group="deployment">
+    <pipeline name="package-info" template="debian-base">
+      <params>
+        <param name="distribution">jessie</param>
+        <param name="package">package-info</param>
+        <param name="target">web</param>
+      </params>
+      <materials>
+        <git url="file:///datadisk/git/package-info.git" dest="package-info" materialName="package-info" />
+        <git url="file:///datadisk/git/deployment-utils.git" dest="deployment-utils" materialName="deployment-utils" />
+      </materials>
+    </pipeline>
+  </pipelines>
+  <templates>
+    <pipeline name="debian-base">
+      <stage name="build" cleanWorkingDir="true">
+        <jobs>
+          <job name="build-deb" timeout="5">
+            <tasks>
+              <exec command="../deployment-utils/debian-autobuild" workingdir="#{package}" />
+            </tasks>
+            <artifacts>
+              <artifact src="version" />
+              <artifact src="#{package}*_*" dest="#{package}/" />
+            </artifacts>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="upload-testing">
+        <jobs>
+          <job name="upload-testing">
+            <tasks>
+              <fetchartifact pipeline="" stage="build" job="build-deb" srcdir="#{package}">
+                <runif status="passed" />
+              </fetchartifact>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>deployment-utils/add-package testing #{distribution} #{package}_*.deb</arg>
+              </exec>
+            </tasks>
+            <resources>
+              <resource>aptly</resource>
+            </resources>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="deploy-testing">
+        <jobs>
+          <job name="deploy-testing">
+            <tasks>
+              <exec command="ansible" workingdir="deployment-utils/ansible/">
+                <arg>--sudo</arg>
+                <arg>--inventory-file=testing</arg>
+                <arg>#{target}</arg>
+                <arg>-m</arg>
+                <arg>apt</arg>
+                <arg>-a</arg>
+                <arg>name=#{package} state=latest update_cache=yes</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="upload-production">
+        <approval type="manual" />
+        <jobs>
+          <job name="upload-production">
+            <tasks>
+              <fetchartifact pipeline="" stage="build" job="build-deb" srcdir="#{package}">
+                <runif status="passed" />
+              </fetchartifact>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>deployment-utils/add-package production #{distribution} #{package}_*.deb</arg>
+              </exec>
+            </tasks>
+            <resources>
+              <resource>aptly</resource>
+            </resources>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="deploy-production">
+        <jobs>
+          <job name="deploy-production">
+            <tasks>
+              <exec command="ansible" workingdir="deployment-utils/ansible/">
+                <arg>--sudo</arg>
+                <arg>--inventory-file=production</arg>
+                <arg>#{target}</arg>
+                <arg>-m</arg>
+                <arg>apt</arg>
+                <arg>-a</arg>
+                <arg>name=#{package} state=latest update_cache=yes</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </templates>
+  <agents>
+    <agent hostname="pete" ipaddress="192.168.2.106" uuid="1163fc1c-45e5-433a-9fa3-fce428c403ba">
+      <resources>
+        <resource>aptly</resource>
+      </resources>
+    </agent>
+  </agents>
+</cruise>
+
