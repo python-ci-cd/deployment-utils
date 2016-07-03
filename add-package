@@ -18,7 +18,7 @@ my @aptly_cmd   = ("aptly", "-config=$config_file");
 
 init_config();
 init_repo();
-add_package();
+add_packages();
 
 
 sub init_config {
@@ -38,7 +38,7 @@ sub init_repo {
     system @aptly_cmd, "publish", "repo", "myrepo";
 }
 
-sub add_package {
+sub add_packages {
     system @aptly_cmd,  "repo", "add", "myrepo", $_
         for @packages;
     system @aptly_cmd,  "publish", "update", $distribution;
