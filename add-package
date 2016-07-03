@@ -6,10 +6,10 @@ use JSON qw(encode_json);
 use File::Path qw(mkpath);
 use autodie;
 
-unless ( @ARGV == 3) {
-    die "Usage: $0 <environment> <distribution> <.deb file>\n";
+unless ( @ARGV >= 3) {
+    die "Usage: $0 <environment> <distribution> <.deb file>+\n";
 }
-my ( $env, $distribution, $package ) = @ARGV;
+my ( $env, $distribution, @packages ) = @ARGV;
 
 my $base_path   = "$ENV{HOME}/aptly";
 my $repo_path   = "$base_path/$env/$distribution";
@@ -39,6 +39,7 @@ sub init_repo {
 }
 
 sub add_package {
-    system @aptly_cmd,  "repo", "add", "myrepo", $package;
+    system @aptly_cmd,  "repo", "add", "myrepo", $_
+        for @packages;
     system @aptly_cmd,  "publish", "update", $distribution;
 }
