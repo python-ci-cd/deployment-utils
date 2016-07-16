@@ -39,6 +39,7 @@
         - dh-virtualenv
         - gnupg2
         - libjson-perl
+        - python-setuptools
         - lighttpd
         - rng-tools
      - copy: src=files/key-control-file dest=/var/go/key-control-file
