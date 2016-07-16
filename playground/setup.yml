@@ -25,20 +25,26 @@
    - service: name=go-agent enabled=yes state=started
 
  - hosts: aptly
+   handlers:
+    - name: restart lighttpd
+      service: name=lighttpd state=restarted
    tasks:
      - apt: package={{item}} state=installed
        with_items:
-        - lighttpd
+        - ansible
         - aptly
         - build-essential
-        - dh-virtualenv
         - devscripts
-        - gnupg2
-        - rng-tools
         - dh-systemd
+        - dh-virtualenv
+        - gnupg2
+        - libjson-perl
+        - lighttpd
+        - rng-tools
      - copy: src=files/key-control-file dest=/var/go/key-control-file
      - command: killall rngd
        ignore_errors: yes
+       changed_when: False
      - command: rngd -r /dev/urandom
        changed_when: False
      - command: gpg --gen-key --batch /var/go/key-control-file
@@ -53,6 +59,29 @@
        become_user: go
        become: true
      - fetch: src=/var/go/pubring.asc dest=deb-key.asc fail_on_missing=yes flat=yes
+     - name: Bootstrap the aptly repos that will be configured on the `target` machines
+       copy:
+        src: ../add-package
+        dest: /usr/local/bin/add-package
+        mode: 0755
+     - name: Download an example package to fill the repo with
+       get_url:
+        url: http://ftp.de.debian.org/debian/pool/main/b/bash/bash_4.3-11+b1_amd64.deb
+        dest: /tmp/bash_4.3-11+b1_amd64.deb
+     - command: /usr/local/bin/add-package {{item}} jessie /tmp/bash_4.3-11+b1_amd64.deb
+       args:
+           creates: /var/go/aptly/{{ item }}-jessie.conf
+       with_items: 
+         - testing
+         - production
+       become_user: go
+       become: true
+
+     - name: Configure lighttpd to serve the aptly directories
+       copy: src=files/lighttpd.conf dest=/etc/lighttpd/conf-enabled/30-aptly.conf
+       notify:
+         - restart lighttpd
+     - service: name=lighttpd state=started enabled=yes
  
  - hosts: target
    tasks:
@@ -60,3 +89,15 @@
         user: root
         key: "{{ lookup('file', 'go-rsa.pub') }}"
      - apt_key: data="{{ lookup('file', 'deb-key.asc') }}" state=present
+
+ - hosts: production
+   tasks:
+     - apt_repository:
+         repo: "deb http://{{hostvars['agent.local']['ansible_host'] }}/debian/production/jessie jessie main"
+         state: present
+
+ - hosts: testing
+   tasks:
+     - apt_repository:
+         repo: "deb http://{{hostvars['agent.local']['ansible_host'] }}/debian/testing/jessie jessie main"
+         state: present
