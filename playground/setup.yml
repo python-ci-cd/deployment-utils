@@ -3,6 +3,11 @@
    vars:
      go_server: 10.0.2.2
    tasks:
+   - group: name=go system=yes
+   - name: Make sure the go user has an SSH key
+     user: name=go system=yes group=go generate_ssh_key=yes home=/var/go
+   - name: Fetch the ssh public key, so we can later distribute it.
+     fetch: src=/var/go/.ssh/id_rsa.pub dest=go-rsa.pub fail_on_missing=yes flat=yes
    - apt: package=apt-transport-https state=installed
    - apt_key: url=https://download.go.cd/GOCD-GPG-KEY.asc state=present validate_certs=no
    - apt_repository: repo='deb https://download.go.cd /' state=present
@@ -10,11 +15,48 @@
      with_items:
       - go-agent
       - git
-      - build-essential
+
+   - copy:
+       src: files/guid.txt
+       dest: /var/lib/go-agent/config/guid.txt
+       owner: go
+       group: go
    - lineinfile: dest=/etc/default/go-agent regexp=^GO_SERVER= line=GO_SERVER={{ go_server }}
    - service: name=go-agent enabled=yes state=started
 
  - hosts: aptly
    tasks:
-     - apt: package=aptly state=installed
+     - apt: package={{item}} state=installed
+       with_items:
+        - lighttpd
+        - aptly
+        - build-essential
+        - dh-virtualenv
+        - devscripts
+        - gnupg2
+        - rng-tools
+        - dh-systemd
+     - copy: src=files/key-control-file dest=/var/go/key-control-file
+     - command: killall rngd
+       ignore_errors: yes
+     - command: rngd -r /dev/urandom
+       changed_when: False
+     - command: gpg --gen-key --batch /var/go/key-control-file
+       args:
+         creates: /var/go/.gnupg/pubring.gpg
+       become_user: go
+       become: true
+       changed_when: False
+     - shell: gpg --export --armor > /var/go/pubring.asc
+       args:
+         creates: /var/go/pubring.asc
+       become_user: go
+       become: true
+     - fetch: src=/var/go/pubring.asc dest=deb-key.asc fail_on_missing=yes flat=yes
  
+ - hosts: target
+   tasks:
+     - authorized_key:
+        user: root
+        key: "{{ lookup('file', 'go-rsa.pub') }}"
+     - apt_key: data="{{ lookup('file', 'deb-key.asc') }}" state=present
