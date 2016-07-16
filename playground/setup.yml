@@ -1,0 +1,20 @@
+---
+ - hosts: go-agent
+   vars:
+     go_server: 10.0.2.2
+   tasks:
+   - apt: package=apt-transport-https state=installed
+   - apt_key: url=https://download.go.cd/GOCD-GPG-KEY.asc state=present validate_certs=no
+   - apt_repository: repo='deb https://download.go.cd /' state=present
+   - apt: update_cache=yes package={{item}} state=installed
+     with_items:
+      - go-agent
+      - git
+      - build-essential
+   - lineinfile: dest=/etc/default/go-agent regexp=^GO_SERVER= line=GO_SERVER={{ go_server }}
+   - service: name=go-agent enabled=yes state=started
+
+ - hosts: aptly
+   tasks:
+     - apt: package=aptly state=installed
+ 

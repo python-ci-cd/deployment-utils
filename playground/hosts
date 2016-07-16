@@ -1,0 +1,18 @@
+[all:vars]
+ansible_ssh_user=root
+
+[go-agent]
+agent.local ansible_host=172.28.128.5
+
+[aptly]
+agent.local
+
+[target]
+testing.local ansible_host=172.28.128.3
+production.local ansible_host=172.28.128.4
+
+[testing]
+testing.local
+
+[production]
+production.local
