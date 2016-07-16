@@ -95,11 +95,11 @@
  - hosts: production
    tasks:
      - apt_repository:
-         repo: "deb http://{{hostvars['agent.local']['ansible_host'] }}/debian/production/jessie jessie main"
+         repo: "deb http://{{hostvars['agent.local']['ansible_ssh_host'] }}/debian/production/jessie jessie main"
          state: present
 
  - hosts: testing
    tasks:
      - apt_repository:
-         repo: "deb http://{{hostvars['agent.local']['ansible_host'] }}/debian/testing/jessie jessie main"
+         repo: "deb http://{{hostvars['agent.local']['ansible_ssh_host'] }}/debian/testing/jessie jessie main"
          state: present
