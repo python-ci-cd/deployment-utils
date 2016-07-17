@@ -103,3 +103,12 @@
      - apt_repository:
          repo: "deb http://{{hostvars['agent.local']['ansible_ssh_host'] }}/debian/testing/jessie jessie main"
          state: present
+
+ - hosts: go-agent
+   tasks:
+     - name: 'Checking connectivity to {{item}}'
+       become: True
+       become_user: go
+       command: ssh -o StrictHostkeyChecking=No root@"{{ hostvars[item]['ansible_ssh_host'] }}" true
+       changed_when: false
+       with_items: groups['target']
