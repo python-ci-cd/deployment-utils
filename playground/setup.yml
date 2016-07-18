@@ -1,7 +1,7 @@
 ---
  - hosts: go-agent
    vars:
-     go_server: 10.0.2.2
+     go_server: 172.28.128.1
    tasks:
    - group: name=go system=yes
    - name: Make sure the go user has an SSH key
@@ -60,7 +60,11 @@
          creates: /var/go/pubring.asc
        become_user: go
        become: true
-     - fetch: src=/var/go/pubring.asc dest=deb-key.asc fail_on_missing=yes flat=yes
+     - fetch:
+         src: /var/go/pubring.asc
+         dest: =deb-key.asc
+         fail_on_missing: yes
+         flat: yes
      - name: Bootstrap the aptly repos that will be configured on the `target` machines
        copy:
         src: ../add-package
@@ -106,7 +110,7 @@
 
  - hosts: go-agent
    tasks:
-     - name: 'Checking connectivity to {{item}}'
+     - name: 'Checking SSH connectivity to {{item}}'
        become: True
        become_user: go
        command: ssh -o StrictHostkeyChecking=No root@"{{ hostvars[item]['ansible_ssh_host'] }}" true
