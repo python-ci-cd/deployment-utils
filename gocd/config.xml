@@ -1,16 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="81">
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="82">
   <server artifactsdir="artifacts" commandRepositoryLocation="default" serverId="297774ff-eb0f-4daa-96ae-716e4fef2d9d" />
   <pipelines group="deployment">
     <pipeline name="package-info" template="debian-base">
       <params>
         <param name="distribution">jessie</param>
         <param name="package">package-info</param>
-        <param name="target">web</param>
+        <param name="deploy_playbook">deploy-package-info.yml</param>
       </params>
       <materials>
-        <git url="file:///datadisk/git/package-info.git" dest="package-info" materialName="package-info" />
-        <git url="file:///datadisk/git/deployment-utils.git" dest="deployment-utils" materialName="deployment-utils" />
+        <git url="https://github.com/moritz/package-info.git" dest="package-info" materialName="package-info" />
+        <git url="https://github.com/moritz/deployment-utils.git" dest="deployment-utils" materialName="deployment-utils" />
+      </materials>
+    </pipeline>
+    <pipeline name="python-matheval" template="debian-base">
+      <params>
+        <param name="distribution">jessie</param>
+        <param name="package">python-matheval</param>
+        <param name="deploy_playbook">deploy-python-matheval.yml</param>
+      </params>
+      <materials>
+        <git url="file:///datadisk/git/python-matheval.git" dest="python-matheval" materialName="python-matheval" />
+        <git url="file:///datadisk/git/deployment-utils.git/" dest="deployment-utils" materialName="deployment-utils" />
       </materials>
     </pipeline>
   </pipelines>
@@ -51,15 +62,10 @@
         <jobs>
           <job name="deploy-testing">
             <tasks>
-              <exec command="ansible" workingdir="deployment-utils/ansible/">
-                <arg>--sudo</arg>
-                <arg>--inventory-file=testing</arg>
-                <arg>#{target}</arg>
-                <arg>-m</arg>
-                <arg>apt</arg>
-                <arg>-a</arg>
-                <arg>name=#{package} state=latest update_cache=yes</arg>
-                <runif status="passed" />
+              <fetchartifact pipeline="" stage="build" job="build-deb" srcfile="version" />
+              <exec command="/bin/bash" workingdir="deployment-utils/ansible/">
+                <arg>-c</arg>
+                <arg>ansible-playbook --inventory-file=testing --extra-vars=package_version=$(&lt; ../../version) #{deploy_playbook}</arg>
               </exec>
             </tasks>
           </job>
@@ -88,15 +94,9 @@
         <jobs>
           <job name="deploy-production">
             <tasks>
-              <exec command="ansible" workingdir="deployment-utils/ansible/">
-                <arg>--sudo</arg>
-                <arg>--inventory-file=production</arg>
-                <arg>#{target}</arg>
-                <arg>-m</arg>
-                <arg>apt</arg>
-                <arg>-a</arg>
-                <arg>name=#{package} state=latest update_cache=yes</arg>
-                <runif status="passed" />
+              <exec command="/bin/bash" workingdir="deployment-utils/ansible/">
+                <arg>-c</arg>
+                <arg>ansible-playbook --inventory-file=production --extra-vars=package_version=$(&lt; ../../version) #{deploy_playbook}</arg>
               </exec>
             </tasks>
           </job>
@@ -105,7 +105,12 @@
     </pipeline>
   </templates>
   <agents>
-    <agent hostname="pete" ipaddress="192.168.2.106" uuid="1163fc1c-45e5-433a-9fa3-fce428c403ba">
+    <agent hostname="pete" ipaddress="10.6.7.163" uuid="1163fc1c-45e5-433a-9fa3-fce428c403ba">
+      <resources>
+        <resource>aptly</resource>
+      </resources>
+    </agent>
+    <agent hostname="agent" ipaddress="10.0.2.15" uuid="51ff989b-1a4e-4772-a6d2-b5df1df02143">
       <resources>
         <resource>aptly</resource>
       </resources>
