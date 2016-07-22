@@ -62,7 +62,7 @@
        become: true
      - fetch:
          src: /var/go/pubring.asc
-         dest: =deb-key.asc
+         dest: deb-key.asc
          fail_on_missing: yes
          flat: yes
      - name: Bootstrap the aptly repos that will be configured on the `target` machines
