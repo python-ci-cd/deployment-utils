@@ -2,10 +2,10 @@
 ansible_ssh_user=root
 
 [go-agent]
-agent.local ansible_ssh_host=172.28.128.5
+go-agent.local ansible_ssh_host=172.28.128.5
 
 [aptly]
-agent.local
+go-agent.local
 
 [target]
 testing.local ansible_ssh_host=172.28.128.3
