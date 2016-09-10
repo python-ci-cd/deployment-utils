@@ -16,12 +16,26 @@
       - go-agent
       - git
 
+   - file:
+       path: /var/lib/go-agent/config
+       state: directory
+       owner: go
+       group: go
    - copy:
        src: files/guid.txt
        dest: /var/lib/go-agent/config/guid.txt
        owner: go
        group: go
-   - lineinfile: dest=/etc/default/go-agent regexp=^GO_SERVER= line=GO_SERVER={{ go_server }}
+   - name: Go agent configuration for versions 16.7 and below
+     lineinfile:
+        dest: /etc/default/go-agent
+        regexp: ^GO_SERVER=
+        line: GO_SERVER={{ go_server }}
+   - name: Go agent configuration for versions 16.8 and above
+     lineinfile:
+        dest: /etc/default/go-agent
+        regexp: ^GO_SERVER_URL=
+        line: GO_SERVER_URL=https://{{ go_server }}:8154/go
    - service: name=go-agent enabled=yes state=started
 
  - hosts: aptly
@@ -77,7 +91,7 @@
      - command: /usr/local/bin/add-package {{item}} jessie /tmp/bash_4.3-11+b1_amd64.deb
        args:
            creates: /var/go/aptly/{{ item }}-jessie.conf
-       with_items: 
+       with_items:
          - testing
          - production
        become_user: go
@@ -88,7 +102,7 @@
        notify:
          - restart lighttpd
      - service: name=lighttpd state=started enabled=yes
- 
+
  - hosts: target
    tasks:
      - authorized_key:
