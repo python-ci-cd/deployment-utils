@@ -9,8 +9,8 @@
    - name: Fetch the ssh public key, so we can later distribute it.
      fetch: src=/var/go/.ssh/id_rsa.pub dest=go-rsa.pub fail_on_missing=yes flat=yes
    - apt: package=apt-transport-https state=installed
-   - apt_key: url=https://download.go.cd/GOCD-GPG-KEY.asc state=present validate_certs=no
-   - apt_repository: repo='deb https://download.go.cd /' state=present
+   - apt_key: url=https://download.gocd.io/GOCD-GPG-KEY.asc state=present validate_certs=no
+   - apt_repository: repo='deb https://download.gocd.io /' state=present
    - apt: update_cache=yes package={{item}} state=installed
      with_items:
       - go-agent
