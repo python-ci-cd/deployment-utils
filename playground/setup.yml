@@ -8,10 +8,12 @@
      user: name=go system=yes group=go generate_ssh_key=yes home=/var/go
    - name: Fetch the ssh public key, so we can later distribute it.
      fetch: src=/var/go/.ssh/id_rsa.pub dest=go-rsa.pub fail_on_missing=yes flat=yes
-   - apt: package=apt-transport-https state=installed
+   - apt: package=apt-transport-https state=installed update_cache=yes
    - apt_key: url=https://download.gocd.io/GOCD-GPG-KEY.asc state=present validate_certs=no
    - apt_repository: repo='deb https://download.gocd.io /' state=present
-   - apt: update_cache=yes package={{item}} state=installed
+   - apt_repository: repo='deb http://ftp.debian.org/debian jessie-backports main' state=present
+   - apt: update_cache=yes package=openjdk-8-jre-headless state=installed default_release=jessie-backports
+   - apt: package={{item}} state=installed force=yes
      with_items:
       - go-agent
       - git
@@ -86,9 +88,9 @@
         mode: 0755
      - name: Download an example package to fill the repo with
        get_url:
-        url: http://ftp.de.debian.org/debian/pool/main/b/bash/bash_4.3-11+b1_amd64.deb
-        dest: /tmp/bash_4.3-11+b1_amd64.deb
-     - command: /usr/local/bin/add-package {{item}} jessie /tmp/bash_4.3-11+b1_amd64.deb
+        url: https://perlgeek.de/static/bash_4.3-11+deb8u1_amd64.deb
+        dest: /tmp/bash_4.3-11+deb8u1_amd64.deb
+     - command: /usr/local/bin/add-package {{item}} jessie /tmp/bash_4.3-11+deb8u1_amd64.deb
        args:
            creates: /var/go/aptly/{{ item }}-jessie.conf
        with_items:
@@ -129,4 +131,6 @@
        become_user: go
        command: ssh -o StrictHostkeyChecking=No root@"{{ hostvars[item]['ansible_ssh_host'] }}" true
        changed_when: false
-       with_items: groups['target']
+       with_items:
+            - testing.local
+            - production.local
