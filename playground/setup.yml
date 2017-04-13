@@ -7,9 +7,16 @@
    - name: Make sure the go user has an SSH key
      user: name=go system=yes group=go generate_ssh_key=yes home=/var/go
    - name: Fetch the ssh public key, so we can later distribute it.
-     fetch: src=/var/go/.ssh/id_rsa.pub dest=go-rsa.pub fail_on_missing=yes flat=yes
+     fetch:
+        src: /var/go/.ssh/id_rsa.pub
+        dest: go-rsa.pub
+        fail_on_missing: yes
+        flat: yes
    - apt: package=apt-transport-https state=installed update_cache=yes
-   - apt_key: url=https://download.gocd.io/GOCD-GPG-KEY.asc state=present validate_certs=no
+   - apt_key:
+        url: https://download.gocd.io/GOCD-GPG-KEY.asc
+        state: present
+        validate_certs: no
    - apt_repository: repo='deb https://download.gocd.io /' state=present
    - apt_repository:
         repo: 'deb http://ftp.debian.org/debian jessie-backports main'
@@ -137,7 +144,8 @@
      - name: 'Checking SSH connectivity to {{item}}'
        become: True
        become_user: go
-       command: ssh -o StrictHostkeyChecking=No root@"{{ hostvars[item]['ansible_ssh_host'] }}" true
+       command: ssh -o StrictHostkeyChecking=No \
+            root@"{{ hostvars[item]['ansible_ssh_host'] }}" true
        changed_when: false
        with_items:
             - testing.local
