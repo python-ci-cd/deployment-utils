@@ -18,16 +18,9 @@
         state: present
         validate_certs: no
    - apt_repository: repo='deb https://download.gocd.org /' state=present
-   - apt_repository:
-        repo: 'deb http://ftp.debian.org/debian jessie-backports main'
-        state: present
-   - apt:
-        update_cache: yes
-        package: openjdk-8-jre-headless
-        state: installed
-        default_release: jessie-backports
    - apt: package={{item}} state=installed force=yes
      with_items:
+      - openjdk-8-jre-headless
       - go-agent
       - git
 
@@ -103,9 +96,9 @@
        get_url:
         url: https://perlgeek.de/static/bash_4.3-11+deb8u1_amd64.deb
         dest: /tmp/bash_4.3-11+deb8u1_amd64.deb
-     - command: /usr/local/bin/add-package {{item}} jessie /tmp/bash_4.3-11+deb8u1_amd64.deb
+     - command: /usr/local/bin/add-package {{item}} stretch /tmp/bash_4.3-11+deb8u1_amd64.deb
        args:
-           creates: /var/go/aptly/{{ item }}-jessie.conf
+           creates: /var/go/aptly/{{ item }}-stretch.conf
        with_items:
          - testing
          - production
@@ -130,13 +123,13 @@
  - hosts: production
    tasks:
      - apt_repository:
-         repo: "deb http://172.28.128.5/debian/production/jessie jessie main"
+         repo: "deb http://172.28.128.5/debian/production/stretch stretch main"
          state: present
 
  - hosts: testing
    tasks:
      - apt_repository:
-         repo: "deb http://172.28.128.5/debian/testing/jessie jessie main"
+         repo: "deb http://172.28.128.5/debian/testing/stretch stretch main"
          state: present
 
  - hosts: go-agent

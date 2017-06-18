@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 Vagrant.configure(2) do |config|
-  config.vm.box = "debian/contrib-jessie64"
+  config.vm.box = "debian/stretch64"
 
   {
     'testing'    => "172.28.128.3",
