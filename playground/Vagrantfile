@@ -10,15 +10,15 @@ Vagrant.configure(2) do |config|
     'go-agent'   => "172.28.128.5",
   }.each do |name, ip|
     config.vm.define name do |instance|
-        instance.vm.network "private_network", ip: ip
+        instance.vm.network "private_network", ip: ip,
+            auto_config: false
         instance.vm.hostname = name + '.local'
     end
   end
 
-  config.vm.synced_folder '/datadisk/git', '/datadisk/git'
-
   config.vm.provision "shell" do |s|
-    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub")
+        .first.strip
     s.inline = <<-SHELL
       mkdir -p /root/.ssh
       echo #{ssh_pub_key} >> /root/.ssh/authorized_keys

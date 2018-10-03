@@ -12,13 +12,13 @@
         dest: go-rsa.pub
         fail_on_missing: yes
         flat: yes
-   - apt: package=apt-transport-https state=installed update_cache=yes
+   - apt: package=apt-transport-https state=present update_cache=yes
    - apt_key:
         url: https://download.gocd.org/GOCD-GPG-KEY.asc
         state: present
         validate_certs: no
    - apt_repository: repo='deb https://download.gocd.org /' state=present
-   - apt: package={{item}} state=installed force=yes
+   - apt: package={{item}} state=present force=yes
      with_items:
       - openjdk-8-jre-headless
       - go-agent
@@ -51,7 +51,7 @@
     - name: restart lighttpd
       service: name=lighttpd state=restarted
    tasks:
-     - apt: package={{item}} state=installed
+     - apt: package={{item}} state=present
        with_items:
         - ansible
         - aptly
