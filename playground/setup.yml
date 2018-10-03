@@ -65,7 +65,7 @@
         - python-setuptools
         - lighttpd
         - rng-tools
-     - copy: src=files/key-control-file dest=/var/go/key-control-file
+     - copy: src=files/key-control-file-gpg2 dest=/var/go/key-control-file
      - command: killall rngd
        ignore_errors: yes
        changed_when: False
