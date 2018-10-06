@@ -34,11 +34,6 @@
        dest: /var/lib/go-agent/config/guid.txt
        owner: go
        group: go
-   - name: Go agent configuration for versions 16.7 and below
-     lineinfile:
-        dest: /etc/default/go-agent
-        regexp: ^GO_SERVER=
-        line: GO_SERVER={{ go_server }}
    - name: Go agent configuration for versions 16.8 and above
      lineinfile:
         dest: /etc/default/go-agent
@@ -97,13 +92,12 @@
         url: https://perlgeek.de/static/bash_4.3-11+deb8u1_amd64.deb
         dest: /tmp/bash_4.3-11+deb8u1_amd64.deb
      - command: /usr/local/bin/add-package {{item}} stretch /tmp/bash_4.3-11+deb8u1_amd64.deb
-       args:
-           creates: /var/go/aptly/{{ item }}-stretch.conf
        with_items:
          - testing
          - production
        become_user: go
        become: true
+     - user: name=www-data groups=go
 
      - name: Configure lighttpd to serve the aptly directories
        copy:
